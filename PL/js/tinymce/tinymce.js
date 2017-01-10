@@ -19,6 +19,12 @@
  *
  *   To fix this isDescendant function was added. This function checks whether an element is descendant of an other element.
  *   So tapLinksAndImages was modified to apply its logic for elements inside of Editor container element only.
+ *
+ * - The addBrAfterLastLinks method was changed.
+ *   This method is invoked only on Gecko browsers. The method selects all 'A' tags. For all links that are last children of block
+ *   it adds a bogus br element. If page contains any links anywere except editor area, the markup will be broken.
+ *
+ *   To fix it the selection was narrowed by adding the class of editor container.
  * 
  * Use a compare tool to see modifications to the orginal tinymce.js code (compare with http://tfsnpt.int.thomson.com:8080/tfs/Cobalt_Collection/Cobalt%20Static%20Content/_versionControl#fileName=tinymce.js&path=%24%2FCobalt+Static+Content%2FDevelopment%2FStaticContent%2Fsite%2FExternal%2Ftinymce)
  *
@@ -27717,7 +27723,11 @@ define("tinymce/util/Quirks", [
 		 */
 		function addBrAfterLastLinks() {
 			function fixLinks() {
-				each(dom.select('a'), function(node) {
+				/**
+				* Added the .mce-content-body class to narrow a selection of A tags. In result this initial fix will be only applied 
+				* for text container and it will not modify a markup anywhere except this container
+				*/
+				each(dom.select('.mce-content-body a'), function (node) {
 					var parentNode = node.parentNode, root = dom.getRoot();
 
 					if (parentNode.lastChild === node) {
