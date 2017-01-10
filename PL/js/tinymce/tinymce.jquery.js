@@ -7,6 +7,26 @@
 /*jshint smarttabs:true, undef:true, latedef:true, curly:true, bitwise:true, camelcase:true */
 /*globals $code */
 
+/**
+ * This version of date.js pulled from https://www.tinymce.com/download/ on April 27, 2015 and modified for Thomson Reuters. 
+ * The following modifications were made for Thomson Reuters:
+ * 
+ * - The tapLinksAndImages() method was changed.
+ *   If TinyMCE is used in "content_editable: true" mode there is no iFrame-container for TineMCE's content so TineMCE can
+ *   potentially change a content of the page where it is placed. So this actually happens in case of iOs in function
+ *   tapLinksAndImages that binds custom callback on all click event for all anchors and prevents its propagation. This
+ *   leads to an issue when all links on the page are unclickable.
+ *
+ *   To fix this isDescendant function was added. This function checks whether an element is descendant of an other element.
+ *   So tapLinksAndImages was modified to apply its logic for elements inside of Editor container element only.
+ * 
+ * Use a compare tool to see modifications to the orginal tinymce.js code (compare with http://tfsnpt.int.thomson.com:8080/tfs/Cobalt_Collection/Cobalt%20Static%20Content/_versionControl#fileName=tinymce.js&path=%24%2FCobalt+Static+Content%2FDevelopment%2FStaticContent%2Fsite%2FExternal%2Ftinymce)
+ * 
+ * @date: 2015-03-10 
+ * @copyright: Copyright (c) 1999-2015 Ephox Corp. All rights reserved.
+ * @license: Released under LGPL License. See license.txt. 
+ * @website: https://www.tinymce.com/
+ */
 (function(exports, undefined) {
 	"use strict";
 
@@ -26014,15 +26034,32 @@ define("tinymce/util/Quirks", [
 		 * 2) If you hold down the finger it will display the link/image touch callout menu.
 		 */
 		function tapLinksAndImages() {
-			editor.on('click', function(e) {
-				var elm = e.target;
-
+/* FIX:START */
+			/**
+			 * Fix for bug http://tfsnpt.int.thomson.com:8080/tfs/Cobalt_Collection/Cobalt%20Product%20Backlog/_workitems#id=878077
+			 */
+			function isDescendant(target, parent) {
 				do {
-					if (elm.tagName === 'A') {
-						e.preventDefault();
-						return;
-					}
-				} while ((elm = elm.parentNode));
+					if (target.parentElement === parent)
+						return true;
+				} while (target = target.parentElement)
+				return false;
+			}
+/* FIX:END */
+
+			editor.on('click', function (e) {
+				var elm = e.target;
+/* FIX:START */
+				// Fix for http://tfsnpt.int.thomson.com:8080/tfs/Cobalt_Collection/Cobalt%20Product%20Backlog/_workitems#id=878077
+				if (isDescendant(elm, editor.bodyElement)) {
+/* FIX:END */
+					do {
+						if (elm.tagName === 'A') {
+							e.preventDefault();
+							return;
+						}
+					} while ((elm = elm.parentNode));
+				}
 			});
 
 			editor.contentStyles.push('.mce-content-body {-webkit-touch-callout: none}');
